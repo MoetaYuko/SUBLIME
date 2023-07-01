@@ -94,5 +94,39 @@ def load_citation_network(dataset_str, sparse=None):
     return features, nfeats, labels, nclasses, train_mask, val_mask, test_mask, adj
 
 
+def sdcn_load_graph(dataset):
+    path = 'data/{}_graph.txt'.format(dataset)
+
+    data = np.loadtxt('data/{}.txt'.format(dataset))
+    n, _ = data.shape
+
+    idx = np.array([i for i in range(n)], dtype=np.int32)
+    idx_map = {j: i for i, j in enumerate(idx)}
+    edges_unordered = np.genfromtxt(path, dtype=np.int32)
+    edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),
+                     dtype=np.int32).reshape(edges_unordered.shape)
+    adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
+                        shape=(n, n), dtype=np.float32)
+
+    return adj
+
+def sdcn_load_data(dataset, sparse):
+    features = torch.from_numpy(np.loadtxt('data/{}.txt'.format(dataset), dtype=np.float32))
+    labels = torch.from_numpy(np.loadtxt('data/{}_label.txt'.format(dataset), dtype=int)).long()
+
+    adj = sdcn_load_graph(dataset)
+    if not sparse:
+        adj = np.array(adj.todense(), dtype='float32')
+    else:
+        adj = sparse_mx_to_torch_sparse_tensor(adj)
+
+    nfeats = features.shape[1]
+    nclasses = torch.max(labels).item() + 1
+
+    return features, nfeats, labels, nclasses, None, None, None, adj
+
+
 def load_data(args):
+    if args.dataset in ['acm', 'dblp']:
+        return sdcn_load_data(args.dataset, args.sparse)
     return load_citation_network(args.dataset, args.sparse)

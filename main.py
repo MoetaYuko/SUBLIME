@@ -184,9 +184,6 @@ class Experiment:
             if torch.cuda.is_available():
                 model = model.cuda()
                 graph_learner = graph_learner.cuda()
-                train_mask = train_mask.cuda()
-                val_mask = val_mask.cuda()
-                test_mask = test_mask.cuda()
                 features = features.cuda()
                 labels = labels.cuda()
                 if not args.sparse:
@@ -233,6 +230,9 @@ class Experiment:
                         else:
                             f_adj = f_adj.detach()
 
+                        train_mask = train_mask.cuda()
+                        val_mask = val_mask.cuda()
+                        test_mask = test_mask.cuda()
                         val_accu, test_accu, _ = self.evaluate_adj_by_cls(f_adj, features, nfeats, labels,
                                                                                nclasses, train_mask, val_mask, test_mask, args)
 
@@ -287,7 +287,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # Experimental setting
     parser.add_argument('-dataset', type=str, default='cora',
-                        choices=['cora', 'citeseer', 'pubmed'])
+                        choices=['cora', 'citeseer', 'pubmed', 'acm', 'dblp'])
     parser.add_argument('-ntrials', type=int, default=5)
     parser.add_argument('-sparse', type=int, default=0)
     parser.add_argument('-gsl_mode', type=str, default="structure_inference",
